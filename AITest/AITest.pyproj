@@ -21,11 +21,7 @@
     <EnableUnmanagedDebugging>false</EnableUnmanagedDebugging>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="EMA.py" />
     <Compile Include="Model.py">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="PrepareData.py">
       <SubType>Code</SubType>
     </Compile>
   </ItemGroup>

@@ -4,18 +4,24 @@
 # ReLU ---> Softmax
 
 import tensorflow as tf
-import PrepareData as pd
+import matplotlib.pyplot as plt
+import numpy as np
 
-# sess = tf.InteractiveSession()
+from tensorflow.examples.tutorials.mnist import input_data
+
+# Prepare MNIST
+def LoadDataset():
+    dataset_mnist = input_data.read_data_sets('F:\\MNIST', one_hot = True)
+    return dataset_mnist
 
 # Constant of MNIST
 INPUT_NODE = 784
 OUTPUT_NODE = 10
 
 # Hyperparametres of NN
-EPOCHS_MAX = 2000
-BATCH_SIZE = 64        # size of mini-batch
-LEARNING_RATE = 0.001   # learning rate for Adam
+EPOCHS_MAX = 1000       # Epoch of training
+BATCH_SIZE = 64         # Size of mini-batch
+LEARNING_RATE = 0.001   # Learning rate for Adam
 BETA1 = 0.9             # Beta1 for Adam
 BETA2 = 0.999           # Beta2 for Adam
 EPSILON = 1e-8          # Epsilon for Adam
@@ -85,16 +91,33 @@ prediction = tf.equal(tf.argmax(outputNodes, 1), tf.argmax(groundTruth, 1))
 accuracy = tf.reduce_mean(tf.cast(prediction, tf.float32))
 
 # Run
-with tf.Session() as sess:
+config = tf.ConfigProto()
+config.gpu_options.allow_growth = True
+with tf.Session(config = config) as sess:
     sess.run(tf.global_variables_initializer())
-    mnist = pd.LoadDataset()
+    mnist = LoadDataset()
     for epoch in range(EPOCHS_MAX):
         batch = mnist.train.next_batch(BATCH_SIZE)
         if epoch % 100 == 0:
-            trainAcc = accuracy.eval(feed_dict = {x:batch[0], y:batch[1], keepProb:1})
-            print("Epoch[%d] = %g" %(epoch, trainAcc))
+            trainAcc = accuracy.eval(feed_dict = {x:batch[0], y:batch[1], keepProb:1.0})
+            print('Epoch[%d] Train Accuracy = %g' %(epoch, trainAcc))
         sess.run(trainStep, feed_dict = {x:batch[0], y:batch[1], keepProb:0.5})
     
-    print("Cross Validation : %g" %accuracy.eval(feed_dict={x:mnist.test.images, y:mnist.test.labels, keepProb:1.0}))
-
+    print('Cross Validation Accuracy = %g' %accuracy.eval(feed_dict={x:mnist.validation.images, y:mnist.validation.labels, keepProb:1.0}))
+    
+    # Performance Test
+    print('Testing...')
+    TestBatch = mnist.test.next_batch(BATCH_SIZE * 10)
+    Xs = TestBatch[0]
+    Ys = TestBatch[1]
+    Ps = outputNodes.eval(feed_dict={x:Xs, y:Ys, keepProb:1.0}).argmax(axis = 1)
+    Size = Ys.shape[0]
+    while True:
+        ind = np.random.randint(Size)
+        label = Ys[ind].argmax(axis = 0)
+        image = Xs[ind].reshape([28, 28])
+        pred = Ps[ind]
+        plt.title('Example: %d Label: %d Prediction:%d' % (ind, label, pred))
+        plt.imshow(image, cmap=plt.get_cmap('gray_r'))
+        plt.show()
 
